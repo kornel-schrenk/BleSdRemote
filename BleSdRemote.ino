@@ -37,7 +37,7 @@ void setup() {
 
 	Serial.println(F("\nBleSdRemote - START\n"));
 
-	Serial.print(F("Initializing SD card..."));
+	Serial.print(F("SD - Initializing SD card..."));
 	pinMode(sdChipSelectPin, OUTPUT);
 	if (!SD.begin(sdChipSelectPin, SPI_HALF_SPEED)) {
 		//Stop the sketch execution
@@ -46,11 +46,8 @@ void setup() {
 		Serial.println(F(" Done."));
 	}
 
-	Serial.println(F("Adafruit Bluefruit Command <-> Data Mode Example"));
-	Serial.println(F("------------------------------------------------"));
-
 	/* Initialise the module */
-	Serial.print(F("Initialising the Bluefruit LE module: "));
+	Serial.print(F("BLE - Initializing the Bluefruit LE module: "));
 
 	if (!ble.begin(VERBOSE_MODE)) {
 		Serial.println(F("Couldn't find Bluefruit, make sure it's in CoMmanD mode & check wiring?"));
@@ -59,9 +56,11 @@ void setup() {
 
 	if (FACTORYRESET_ENABLE) {
 		/* Perform a factory reset to make sure everything is in a known state */
-		Serial.println(F("Performing a factory reset: "));
+		Serial.println(F("BLE - Performing a factory reset: "));
 		if (!ble.factoryReset()) {
 			Serial.println(F("Couldn't do factory reset"));
+		} else {
+			Serial.println(F("OK!"));
 		}
 	}
 
@@ -69,20 +68,14 @@ void setup() {
 	ble.info();
 	ble.verbose(false);
 
-	Serial.println(F("Please use Adafruit Bluefruit LE app to connect in UART mode"));
-	Serial.println(F("Then Enter characters to send to Bluefruit"));
-	Serial.println();
-
-	/* Wait for connection */
+	/* Wait for connection - Adafruit Bluefruit LE app has to be used to establish an UART connection. */
 	while (!ble.isConnected()) {
 		delay(500);
 	}
 
 	// Set module to DATA mode
 	ble.setMode(BLUEFRUIT_MODE_DATA);
-	Serial.println(F("**************************"));
-	Serial.println(F("* Switched to DATA mode! *"));
-	Serial.println(F("**************************"));
+	Serial.println(F("BLE - Switched to DATA mode!"));
 }
 
 void loop() {
@@ -142,7 +135,7 @@ void handleMessage(String message) {
 			responseMessage += "ERROR";
 		}
 	} else if (message.startsWith("GET:") || message.startsWith("get:")) {
-		//TODO Send the file content through the serial channel
+		//TODO Send the file content through the BLE UART channel
 	} else {
 		responseMessage += "ERROR";
 	}
