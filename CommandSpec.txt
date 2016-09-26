@@ -1,9 +1,9 @@
 @LIST# - List all files and directories in the root folder
 
-DIVE0001.TXT, DIVE0002.TXT, DIVE0003.TXT, LOGBOOK.TXT, BOOKS/, PICTURES/,
+@DIVE0001.TXT,DIVE0002.TXT,DIVE0003.TXT,LOGBOOK.TXT,BOOKS/,PICTURES/,#
 
 @LIST:BOOKS# - List all files and directories in the given folder
 
-../, CIBOLA.EPU, TUSKEVAR.PDF, BAROK.PDF,
+@../,CIBOLA.EPU,TUSKEVAR.PDF,BAROK.PDF,#
 
 @GET:LOGBOOK.TXT# - Download the given file from the SD card

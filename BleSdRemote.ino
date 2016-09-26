@@ -120,7 +120,7 @@ void handleMessage(String message) {
 		directoryPath.toCharArray(directoryPathArray, directoryPath.length()+1);
 
 		if (SD.chdir(directoryPathArray)) {
-			responseMessage += listDirectory(SD.vwd());
+			responseMessage += listDirectory(SD.vwd(), false);
 			SD.chdir(); //Change back to the ROOT directory
 		} else {
 			Serial.print("Failed to open ");
@@ -130,7 +130,7 @@ void handleMessage(String message) {
 	} else if (message.startsWith("LIST") || message.startsWith("list")) {
 		//Change back to the ROOT directory
 		if (SD.chdir()) {
-			responseMessage += listDirectory(SD.vwd());
+			responseMessage += listDirectory(SD.vwd(), true);
 		} else {
 			responseMessage += "ERROR";
 		}
@@ -154,13 +154,21 @@ String extractDirectoryPath(String message) {
 	return directoryPath;
 }
 
-String listDirectory(FatFile* currentDir) {
-	String responseMessage = "";
+String listDirectory(FatFile* currentDir, bool isRoot) {
+	//Start the reply with the @ sign
+	String responseMessage = "@";
+
+	if (!isRoot) {
+		//Append the level up command
+		responseMessage += "../,";
+	}
+
 	char longFileName[256];
 	while (true) {
 		SdFile currentFile;
 		if (!currentFile.openNext(currentDir, O_READ)) {
-			//No more files
+			//No more files - close the message
+			responseMessage += "#";
 			return responseMessage;
 		}
 		currentFile.getName(longFileName, 256);
