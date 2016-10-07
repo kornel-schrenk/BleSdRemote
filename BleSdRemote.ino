@@ -127,6 +127,10 @@ void handleMessage(String message) {
 			Serial.println(directoryPathArray);
 			responseMessage += "ERROR";
 		}
+		Serial.println(responseMessage);
+		Serial.flush();
+		ble.print(responseMessage);
+		ble.flush();
 	} else if (message.startsWith("LIST") || message.startsWith("list")) {
 		//Change back to the ROOT directory
 		if (SD.chdir()) {
@@ -134,16 +138,47 @@ void handleMessage(String message) {
 		} else {
 			responseMessage += "ERROR";
 		}
-	} else if (message.startsWith("GET:") || message.startsWith("get:")) {
-		//TODO Send the file content through the BLE UART channel
-	} else {
-		responseMessage += "ERROR";
-	}
+		Serial.println(responseMessage);
+		Serial.flush();
+		ble.print(responseMessage);
+		ble.flush();
+	} else if (message.startsWith("INFO:") || message.startsWith("info:")) {
 
-	Serial.println(responseMessage);
-	Serial.flush();
-	ble.print(responseMessage);
-	ble.flush();
+	} else if (message.startsWith("GETF:") || message.startsWith("getf:")) {
+
+		//The String has to be converted into a char array, otherwise the board will reset itself
+		String directoryPath = extractDirectoryPath(message);
+		char directoryPathArray[directoryPath.length()+1];
+		directoryPath.toCharArray(directoryPathArray, directoryPath.length()+1);
+
+		SdFile currentFile;
+		if (currentFile.open(directoryPathArray, O_READ)) {
+			dumpFile(&currentFile, &ble);
+			currentFile.close();
+		}
+	}
+}
+
+void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out) {
+	byte buffer[256];
+	int readBytes;
+	while (true) {
+		readBytes = currentFile->read(buffer, sizeof(buffer));
+		if (readBytes == -1) {
+			Serial.println("File read error.");
+			return;
+		} else if (readBytes < 256) {
+			out->write(buffer, readBytes);
+			out->flush();
+			ble.write(-1); //EOF = End Of File
+			ble.flush();
+			Serial.println("GETF completed.");
+			return;
+		} else {
+			out->write(buffer, readBytes);
+			out->flush();
+		}
+	}
 }
 
 String extractDirectoryPath(String message) {
