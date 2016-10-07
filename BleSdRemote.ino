@@ -153,23 +153,28 @@ void handleMessage(String message) {
 
 		SdFile currentFile;
 		if (currentFile.open(directoryPathArray, O_READ)) {
-			dumpFile(&currentFile, &ble);
+			dumpFile(&currentFile, &ble, currentFile.fileSize());
 			currentFile.close();
 		}
 	}
 }
 
-void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out) {
-	byte buffer[256];
+void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out, uint32_t totalSize) {
+	unsigned long readSize = 0;
+	byte buffer[1024];
 	int readBytes;
 	while (true) {
 		readBytes = currentFile->read(buffer, sizeof(buffer));
+		readSize += readBytes;
 		if (readBytes == -1) {
 			Serial.println("File read error.");
 			return;
-		} else if (readBytes < 256) {
+		} else if (readBytes < 1024) {
 			out->write(buffer, readBytes);
 			out->flush();
+			Serial.print(readSize);
+			Serial.print("/");
+			Serial.println(totalSize);
 			ble.write(-1); //EOF = End Of File
 			ble.flush();
 			Serial.println("GETF completed.");
@@ -177,6 +182,10 @@ void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out) {
 		} else {
 			out->write(buffer, readBytes);
 			out->flush();
+			Serial.print(readSize);
+			Serial.print("/");
+			Serial.println(totalSize);
+			delay(500);
 		}
 	}
 }
