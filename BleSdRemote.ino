@@ -156,6 +156,32 @@ void handleMessage(String message) {
 			dumpFile(&currentFile, &ble, currentFile.fileSize());
 			currentFile.close();
 		}
+	} else if (message.startsWith("DELF:") || message.startsWith("delf:")) {
+
+		//The String has to be converted into a char array, otherwise the board will reset itself
+		String directoryPath = extractDirectoryPath(message);
+		char directoryPathArray[directoryPath.length()+1];
+		directoryPath.toCharArray(directoryPathArray, directoryPath.length()+1);
+
+		if (SD.remove(directoryPathArray)) {
+			Serial.print("@OK%");
+			Serial.print(directoryPath);
+			Serial.print("#");
+			Serial.flush();
+			ble.print("@OK%");
+			ble.print(directoryPath);
+			ble.print("#");
+			ble.flush();
+		} else {
+			Serial.print("@KO%");
+			Serial.print(directoryPath);
+			Serial.print("#");
+			Serial.flush();
+			ble.print("@KO%");
+			ble.print(directoryPath);
+			ble.print("#");
+			ble.flush();
+		}
 	}
 }
 

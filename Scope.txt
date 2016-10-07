@@ -6,8 +6,8 @@ Blog article
 
 1. File info in a popup
 2. Multiple selection in a list -- DONE
-3. Delete file
-4. Download file from the SD card
+3. Delete file -- DONE
+4. Download file from the SD card -- DONE 
 5. Upload file to the SD card
 6. Open the downloaded file on the Android phone
 

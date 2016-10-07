@@ -8,16 +8,16 @@ API:
 @../,CIBOLA.EPU,TUSKEVAR.PDF,BAROK.PDF,#
 
 @INFO::Images/About.png# - Sends back information about the given file
-???
+??? - NOT IMPLEMENTED
 
 @DELF:Images/About.png# - Deletes the given file on the SD card
-@OK# or @KO#
+@OK%<file path># or @KO%<file path>#
 
 @GETF:Images/About.png# - Download the given file from the SD card
-@<file size in bytes>%<file content>
+@<file size in bytes>#<file content>
 
 @PUTF:Images/About.png# - Upload the given file to the SD card
-????
+??? - NOT IMPLEMENTED
 
 Notes:
 ======
