@@ -160,6 +160,15 @@ void handleMessage(String message) {
 }
 
 void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out, uint32_t totalSize) {
+
+	ble.print("@");
+	ble.print(totalSize);
+	ble.print("#");
+
+	Serial.print("File size: ");
+	Serial.print(totalSize);
+	Serial.println(" bytes");
+
 	unsigned long readSize = 0;
 	byte buffer[1024];
 	int readBytes;
@@ -175,8 +184,6 @@ void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out, uint32_t tota
 			Serial.print(readSize);
 			Serial.print("/");
 			Serial.println(totalSize);
-			ble.write(-1); //EOF = End Of File
-			ble.flush();
 			Serial.println("GETF completed.");
 			return;
 		} else {
@@ -192,7 +199,7 @@ void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out, uint32_t tota
 
 String extractDirectoryPath(String message) {
 	String directoryPath = message.substring(5, message.length());
-	Serial.print(F("Directory path: "));
+	Serial.print(F("File path: "));
 	Serial.println(directoryPath);
 	delay(1000);
 	return directoryPath;
