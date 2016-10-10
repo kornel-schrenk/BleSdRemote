@@ -4,7 +4,7 @@ BleRemote new features:
 Add descriptions to the GitHub repositories
 Blog article
 
-1. File info in a popup
+1. File info in a popup -- DONE
 2. Multiple selection in a list -- DONE
 3. Delete file -- DONE
 4. Download file from the SD card -- DONE 

@@ -144,6 +144,36 @@ void handleMessage(String message) {
 		ble.flush();
 	} else if (message.startsWith("INFO:") || message.startsWith("info:")) {
 
+		//The String has to be converted into a char array, otherwise the board will reset itself
+		String directoryPath = extractDirectoryPath(message);
+		char directoryPathArray[directoryPath.length()+1];
+		directoryPath.toCharArray(directoryPathArray, directoryPath.length()+1);
+
+		SdFile currentFile;
+		if (currentFile.open(directoryPathArray, O_READ)) {
+			Serial.print("@");
+			currentFile.printName(&Serial);
+			Serial.print("%");
+			Serial.print(currentFile.fileSize());
+			Serial.print("%");
+			currentFile.printCreateDateTime(&Serial);
+			Serial.print("%");
+			currentFile.printModifyDateTime(&Serial);
+			Serial.println("#");
+			Serial.flush();
+
+			ble.print("@");
+			currentFile.printName(&ble);
+			ble.print("%");
+			ble.print(currentFile.fileSize());
+			ble.print("%");
+			currentFile.printCreateDateTime(&ble);
+			ble.print("%");
+			currentFile.printModifyDateTime(&ble);
+			ble.print("#");
+			ble.flush();
+		}
+
 	} else if (message.startsWith("GETF:") || message.startsWith("getf:")) {
 
 		//The String has to be converted into a char array, otherwise the board will reset itself

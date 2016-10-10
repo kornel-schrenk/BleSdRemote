@@ -8,7 +8,7 @@ API:
 @../,CIBOLA.EPU,TUSKEVAR.PDF,BAROK.PDF,#
 
 @INFO::Images/About.png# - Sends back information about the given file
-??? - NOT IMPLEMENTED
+@<file name>%<file size in bytes>%<file creation date>%<file modification date>#
 
 @DELF:Images/About.png# - Deletes the given file on the SD card
 @OK%<file path># or @KO%<file path>#
