@@ -24,18 +24,22 @@ const int sdChipSelectPin = 53; //For Mega TFT LCD shield use 53, for SD card re
 //Message handling related variables 
 String messageBuffer = "";
 bool recordMessage = false;
+bool storeInFileMode = false;
+unsigned long storeFileSize = 0;
+unsigned long receivedFileSize = 0;
+SdFile storeFile;
 
 SdFat SD;
 
 void setup() {
 	Serial.begin(115200);
-	// Wait for USB Serial
-	while (!Serial) {
+
+	while (!Serial) { // Wait for USB Serial
 		SysCall::yield();
 	}
 	delay(1000);
 
-	Serial.println(F("\nBleSdRemote - START\n"));
+	Serial.println(F("\nBlueSdRemote - START\n"));
 
 	Serial.print(F("SD - Initializing SD card..."));
 	pinMode(sdChipSelectPin, OUTPUT);
@@ -92,17 +96,35 @@ void loop() {
 }
 
 void readMessageFromSerial(char data) {
-	if (data == '@') {
-		recordMessage = true;
-		digitalWrite(ledPin, HIGH); //Turn the LED on
-	} else if (data == '#') {
-		handleMessage(messageBuffer);
-		recordMessage = false;
-		messageBuffer = "";
-		digitalWrite(ledPin, LOW); //Turn the LED off
+	if (!storeInFileMode) {
+		if (data == '@') {
+			recordMessage = true;
+			digitalWrite(ledPin, HIGH); //Turn the LED on
+		} else if (data == '#') {
+			handleMessage(messageBuffer);
+			recordMessage = false;
+			messageBuffer = "";
+			digitalWrite(ledPin, LOW); //Turn the LED off
+		} else {
+			if (recordMessage) {
+				messageBuffer += data;
+			}
+		}
 	} else {
-		if (recordMessage) {
-			messageBuffer += data;
+		if (receivedFileSize < storeFileSize && storeFile.isOpen()) {
+			storeFile.write(data);
+			receivedFileSize++;
+			if (receivedFileSize % 512 == 0) {
+				Serial.print(receivedFileSize);
+				Serial.print("/");
+				Serial.println(storeFileSize);
+				storeFile.flush();
+			}
+		} else {
+			storeFile.flush();
+			storeFile.close();
+			storeInFileMode = false;
+			Serial.println(F("Switched back into normal message processing mode!"));
 		}
 	}
 }
@@ -112,7 +134,7 @@ void handleMessage(String message) {
 	Serial.flush();
 
 	String responseMessage = "";
-	if (message.startsWith("LIST:") || message.startsWith("list:")) {
+	if (message.startsWith(F("LIST:")) || message.startsWith(F("list:"))) {
 
 		//The String has to be converted into a char array, otherwise the board will reset itself
 		String directoryPath = extractDirectoryPath(message);
@@ -123,26 +145,26 @@ void handleMessage(String message) {
 			responseMessage += listDirectory(SD.vwd(), false);
 			SD.chdir(); //Change back to the ROOT directory
 		} else {
-			Serial.print("Failed to open ");
+			Serial.print(F("Failed to open "));
 			Serial.println(directoryPathArray);
-			responseMessage += "ERROR";
+			responseMessage += F("ERROR");
 		}
 		Serial.println(responseMessage);
 		Serial.flush();
 		ble.print(responseMessage);
 		ble.flush();
-	} else if (message.startsWith("LIST") || message.startsWith("list")) {
+	} else if (message.startsWith(F("LIST")) || message.startsWith(F("list"))) {
 		//Change back to the ROOT directory
 		if (SD.chdir()) {
 			responseMessage += listDirectory(SD.vwd(), true);
 		} else {
-			responseMessage += "ERROR";
+			responseMessage += F("ERROR");
 		}
 		Serial.println(responseMessage);
 		Serial.flush();
 		ble.print(responseMessage);
 		ble.flush();
-	} else if (message.startsWith("INFO:") || message.startsWith("info:")) {
+	} else if (message.startsWith(F("INFO:")) || message.startsWith(F("info:"))) {
 
 		//The String has to be converted into a char array, otherwise the board will reset itself
 		String directoryPath = extractDirectoryPath(message);
@@ -174,7 +196,7 @@ void handleMessage(String message) {
 			ble.flush();
 		}
 
-	} else if (message.startsWith("GETF:") || message.startsWith("getf:")) {
+	} else if (message.startsWith(F("GETF:")) || message.startsWith(F("getf:"))) {
 
 		//The String has to be converted into a char array, otherwise the board will reset itself
 		String directoryPath = extractDirectoryPath(message);
@@ -186,7 +208,7 @@ void handleMessage(String message) {
 			dumpFile(&currentFile, &ble, currentFile.fileSize());
 			currentFile.close();
 		}
-	} else if (message.startsWith("DELF:") || message.startsWith("delf:")) {
+	} else if (message.startsWith(F("DELF:")) || message.startsWith(F("delf:"))) {
 
 		//The String has to be converted into a char array, otherwise the board will reset itself
 		String directoryPath = extractDirectoryPath(message);
@@ -194,23 +216,54 @@ void handleMessage(String message) {
 		directoryPath.toCharArray(directoryPathArray, directoryPath.length()+1);
 
 		if (SD.remove(directoryPathArray)) {
-			Serial.print("@OK%");
+			Serial.print(F("@OK%"));
 			Serial.print(directoryPath);
 			Serial.print("#");
 			Serial.flush();
-			ble.print("@OK%");
+			ble.print(F("@OK%"));
 			ble.print(directoryPath);
 			ble.print("#");
 			ble.flush();
 		} else {
-			Serial.print("@KO%");
+			Serial.print(F("@KO%"));
 			Serial.print(directoryPath);
 			Serial.print("#");
 			Serial.flush();
-			ble.print("@KO%");
+			ble.print(F("@KO%"));
 			ble.print(directoryPath);
 			ble.print("#");
 			ble.flush();
+		}
+	} else if (message.startsWith(F("PUTF:")) || message.startsWith(F("putf:"))) {
+
+		//The String has to be converted into a char array, otherwise the board will reset itself
+		String directoryPath = extractUploadPath(message);
+		char directoryPathArray[directoryPath.length()+1];
+		directoryPath.toCharArray(directoryPathArray, directoryPath.length()+1);
+
+		if (SD.exists(directoryPathArray)) {
+			SD.remove(directoryPathArray);
+			Serial.println(F("Existing file was removed."));
+		}
+
+		if (storeFile.open(directoryPathArray, O_WRITE | O_CREAT | O_APPEND)) {
+			storeFileSize = extractFileSize(message);
+			receivedFileSize = 0;
+
+			Serial.println(F("@OK#"));
+			Serial.flush();
+			ble.print(F("@OK#"));
+			ble.flush();
+
+			storeInFileMode = true;
+			Serial.println(F("Switched into file STORAGE mode!"));
+		} else {
+			Serial.println(F("@KO#"));
+			Serial.flush();
+			ble.print(F("@KO#"));
+			ble.flush();
+
+			storeInFileMode = false;
 		}
 	}
 }
@@ -221,9 +274,9 @@ void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out, uint32_t tota
 	ble.print(totalSize);
 	ble.print("#");
 
-	Serial.print("File size: ");
+	Serial.print(F("File size: "));
 	Serial.print(totalSize);
-	Serial.println(" bytes");
+	Serial.println(F(" bytes"));
 
 	unsigned long readSize = 0;
 	byte buffer[1024];
@@ -232,7 +285,7 @@ void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out, uint32_t tota
 		readBytes = currentFile->read(buffer, sizeof(buffer));
 		readSize += readBytes;
 		if (readBytes == -1) {
-			Serial.println("File read error.");
+			Serial.println(F("File read error."));
 			return;
 		} else if (readBytes < 1024) {
 			out->write(buffer, readBytes);
@@ -240,7 +293,7 @@ void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out, uint32_t tota
 			Serial.print(readSize);
 			Serial.print("/");
 			Serial.println(totalSize);
-			Serial.println("GETF completed.");
+			Serial.println(F("GETF completed."));
 			return;
 		} else {
 			out->write(buffer, readBytes);
@@ -248,7 +301,7 @@ void dumpFile(SdFile* currentFile, Adafruit_BluefruitLE_UART* out, uint32_t tota
 			Serial.print(readSize);
 			Serial.print("/");
 			Serial.println(totalSize);
-			delay(500);
+			delay(500); //Delay was added to switch the line back into normal state
 		}
 	}
 }
@@ -257,8 +310,21 @@ String extractDirectoryPath(String message) {
 	String directoryPath = message.substring(5, message.length());
 	Serial.print(F("File path: "));
 	Serial.println(directoryPath);
-	delay(1000);
 	return directoryPath;
+}
+
+String extractUploadPath(String message) {
+	String directoryPath = message.substring(5, message.indexOf('%'));
+	Serial.print(F("Upload path: "));
+	Serial.println(directoryPath);
+	return directoryPath;
+}
+
+unsigned long extractFileSize(String message) {
+	String fileSize = message.substring(message.indexOf('%')+1);
+	Serial.print(F("Upload file size: "));
+	Serial.println(fileSize);
+	return fileSize.toInt();
 }
 
 String listDirectory(FatFile* currentDir, bool isRoot) {

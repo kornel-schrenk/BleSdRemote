@@ -16,8 +16,9 @@ API:
 @GETF:Images/About.png# - Download the given file from the SD card
 @<file size in bytes>#<file content>
 
-@PUTF:Images/About.png# - Upload the given file to the SD card
-??? - NOT IMPLEMENTED
+@PUTF:Images/About.png%<file size in bytes># - Upload the given file to the SD card
+@OK# -> Switch Arduino into file receiving mode
+<file content>
 
 Notes:
 ======
