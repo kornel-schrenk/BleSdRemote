@@ -8,7 +8,7 @@ Blog article
 2. Multiple selection in a list -- DONE
 3. Delete file -- DONE
 4. Download file from the SD card -- DONE 
-5. Upload file to the SD card
+5. Upload file to the SD card -- DONE
 6. Open the downloaded file on the Android phone
 
 Proper error handling

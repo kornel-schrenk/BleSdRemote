@@ -21,15 +21,16 @@ Adafruit_BluefruitLE_UART ble(bluefruitSS, BLUEFRUIT_UART_MODE_PIN, BLUEFRUIT_UA
 const int ledPin = 13;  // led pin
 const int sdChipSelectPin = 53; //For Mega TFT LCD shield use 53, for SD card reader use 10
 
+SdFat SD;
+
 //Message handling related variables 
 String messageBuffer = "";
 bool recordMessage = false;
+
 bool storeInFileMode = false;
 unsigned long storeFileSize = 0;
 unsigned long receivedFileSize = 0;
 SdFile storeFile;
-
-SdFat SD;
 
 void setup() {
 	Serial.begin(115200);
@@ -98,12 +99,12 @@ void loop() {
 void readMessageFromSerial(char data) {
 	if (!storeInFileMode) {
 		if (data == '@') {
+			messageBuffer = "";
 			recordMessage = true;
 			digitalWrite(ledPin, HIGH); //Turn the LED on
 		} else if (data == '#') {
 			handleMessage(messageBuffer);
 			recordMessage = false;
-			messageBuffer = "";
 			digitalWrite(ledPin, LOW); //Turn the LED off
 		} else {
 			if (recordMessage) {
@@ -114,17 +115,28 @@ void readMessageFromSerial(char data) {
 		if (receivedFileSize < storeFileSize && storeFile.isOpen()) {
 			storeFile.write(data);
 			receivedFileSize++;
-			if (receivedFileSize % 512 == 0) {
-				Serial.print(receivedFileSize);
-				Serial.print("/");
-				Serial.println(storeFileSize);
-				storeFile.flush();
-			}
-		} else {
+		} else if (receivedFileSize == storeFileSize) {
 			storeFile.flush();
 			storeFile.close();
-			storeInFileMode = false;
+
+			Serial.print(receivedFileSize);
+			Serial.print("/");
+			Serial.println(storeFileSize);
+			Serial.flush();
+
 			Serial.println(F("Switched back into normal message processing mode!"));
+
+			messageBuffer = "";
+			storeInFileMode = false;
+		}
+
+		if (receivedFileSize % 512 == 0) {
+			storeFile.flush();
+
+			Serial.print(receivedFileSize);
+			Serial.print("/");
+			Serial.println(storeFileSize);
+			Serial.flush();
 		}
 	}
 }
