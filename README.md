@@ -1,5 +1,7 @@
 # BleSdRemote
 
+For more information please see this blog [post](http://www.schrenk.hu/2016/11/17/BleSdRemote/)!
+
 ## Description
 
 Nowadays some high end phones do not have an extra SD card slot, therefore its users are limited to the  internal storage space of the device. If you need more, you have to spend more money or use the manufacturer's proprietary cloud solution as an alternative extension.
