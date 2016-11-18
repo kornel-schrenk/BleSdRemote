@@ -22,7 +22,7 @@ The repository contains the [Arduino](http://www.arduino.org/) code. The related
 
 ## Communication API
 
-{% codeblock %}
+```javascript
 IN  <-: @LIST# - List all files and directories in the root folder
 OUT ->: @DIVE0001.TXT,DIVE0002.TXT,DIVE0003.TXT,LOGBOOK.TXT,BOOKS/,PICTURES/,#
 
@@ -41,7 +41,7 @@ OUT ->: @<file size in bytes>#<file content>
 IN  <-: @PUTF:Images/About.png%<file size in bytes># - Upload the given file to the SD card
 OUT ->: @OK# -> Switch Arduino into file receiving mode
 IN  <-: <file content>
-{% endcodeblock %}
+```
 
 Every inbound message starts with the **@** character and ends with a **#**. The **:** divides the message into two parts; the keyword and the payload part. Outbound messages are similar to the inbound messages except that the delimiter character is the **%**.
 
