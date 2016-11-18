@@ -20,6 +20,31 @@ The repository contains the [Arduino](http://www.arduino.org/) code. The related
 
 ![alt text](../master/BleSdRemote_bb.png "Fritzing breadboard view")
 
+## Communication API
+
+{% codeblock %}
+IN  <-: @LIST# - List all files and directories in the root folder
+OUT ->: @DIVE0001.TXT,DIVE0002.TXT,DIVE0003.TXT,LOGBOOK.TXT,BOOKS/,PICTURES/,#
+
+IN  <-: @LIST:BOOKS# - List all files and directories in the given folder
+OUT ->: @../,TEST.JPG,TUSKEVAR.PDF,BAROK.PDF,#
+
+IN  <-: @INFO:Images/About.png# - Sends back information about the given file
+OUT ->: @<file name>%<file size in bytes>%<file creation date>%<file modification date>#
+
+IN  <-: @DELF:Images/About.png# - Deletes the given file on the SD card
+OUT ->: @OK%<file path># or @KO%<file path>#
+
+IN  <-: @GETF:Images/About.png# - Download the given file from the SD card
+OUT ->: @<file size in bytes>#<file content>
+
+IN  <-: @PUTF:Images/About.png%<file size in bytes># - Upload the given file to the SD card
+OUT ->: @OK# -> Switch Arduino into file receiving mode
+IN  <-: <file content>
+{% endcodeblock %}
+
+Every inbound message starts with the **@** character and ends with a **#**. The **:** divides the message into two parts; the keyword and the payload part. Outbound messages are similar to the inbound messages except that the delimiter character is the **%**.
+
 ## Repository Owner 
 
 * [Kornel Schrenk](http://www.schrenk.hu/about/)
